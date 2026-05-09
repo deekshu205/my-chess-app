@@ -11,18 +11,20 @@ function App() {
 
   // REASON: This function handles the "Intent" of moving a piece.
   function makeAMove(move) {
+    // PRINCIPLE: Defensive Programming
+    // We wrap this in a functional update to ensure we have the latest state
+    const gameCopy = new Chess(game.fen()); 
+    
     try {
-      const result = game.move(move); // chess.js validates the move
-      
+      const result = gameCopy.move(move);
       if (result) {
-        // If the move is legal, we update the state.
-        // We use a new instance of the game object so React "notices" the change.
-        setGame(new Chess(game.fen())); 
-        setMoveHistory([...moveHistory, result.san]); // Add move to history
-        return true;
+        setGame(gameCopy); // REASON: Providing a BRAND NEW object triggers re-render
+        setMoveHistory((prev) => [...prev, result.san]); // Using functional update for history
+        return result;
       }
     } catch (e) {
-      return null; // Illegal move
+      console.log("Invalid Move:", e);
+      return null;
     }
     return null;
   }
@@ -31,11 +33,11 @@ function App() {
     const move = makeAMove({
       from: sourceSquare,
       to: targetSquare,
-      promotion: "q", // Default to queen for simplicity (Software Principle: MVP)
+      promotion: "q", 
     });
 
-    if (move === null) return false;
-    return true;
+    // If move is null, the board will automatically snap the piece back
+    return move !== null;
   }
 
   return (
